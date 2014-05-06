@@ -2,7 +2,8 @@ import tweepy
 import pickle
 import dropbox
 import time
-
+import math
+ 
 #+++++++
 # this code runs via cron 10 times per day. crontab entries look like:
 #  0 9 * * * python /home/pi/twainbot/twain_bot.py
@@ -19,7 +20,6 @@ tweet_file.close()
 ### figure out which to send (read in iterator file)
 num = int(open('/home/pi/twainbot/tweetnumber.txt').read())
 
-
 ### send tweet!
 ### The Twitter-Posting Script... ###
 CONSUMER_KEY = 'mykey'
@@ -34,7 +34,15 @@ api = tweepy.API(auth)
 
 ### tweet relavent post  (if not at end)
 if num+1 <= len(tweet_list):
-    api.update_status(tweet_list[num])
+    if len(tweet_list[num]) <= 140: # normal tweet, works 99% of time
+        api.update_status(tweet_list[num])
+    elif len(tweet_list[num]) > 140: # split if over 140char, rare
+        ww = tweet_list[num].split(' ')
+        lw = len(ww)
+        api.update_status(' '.join(ww[0:int(math.floor(lw/2))]))
+        time.sleep(5)
+        api.update_status(' '.join(ww[int(math.floor(lw/2)):]))
+
 
 ### update post schedule number file
     num = num+1
